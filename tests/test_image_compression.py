@@ -110,11 +110,14 @@ async def test_download_file_with_filepath_defers_compression_to_final_step(tmp_
 
     monkeypatch.setattr(manager.computed.async_client, "download", fake_download)
 
-    assert await base_web.download_file_with_filepath(
-        "https://example.test/poster.jpg",
-        tmp_path / "poster.jpg",
-        tmp_path,
-    ) is True
+    assert (
+        await base_web.download_file_with_filepath(
+            "https://example.test/poster.jpg",
+            tmp_path / "poster.jpg",
+            tmp_path,
+        )
+        is True
+    )
 
     with Image.open(tmp_path / "poster.jpg") as image:
         assert image.size == (2000, 1000)
