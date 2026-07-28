@@ -69,10 +69,12 @@ class BuildManager:
 
     def run(self):
         """运行构建流程"""
+        version_backup: tuple[Path, str] | None = None
         try:
             start_time = time.time()
             if not self.app_version:
                 self.app_version = get_version_from_config()
+            version_backup = self._apply_build_version()
 
             self._check_environment()
             self._cleanup()
@@ -104,6 +106,36 @@ class BuildManager:
             logger.error(f"意外错误: {e}")
             console.print_exception()
             sys.exit(1)
+        finally:
+            if version_backup is not None:
+                consts_file, original_content = version_backup
+                try:
+                    consts_file.write_text(original_content, encoding="utf-8")
+                except Exception as e:
+                    logger.error(f"restore version config failed: {e}")
+
+    def _apply_build_version(self) -> tuple[Path, str]:
+        """Temporarily inject the requested release version into the packaged code."""
+        version = str(self.app_version or "").strip()
+        if not version.isdigit():
+            raise BuildError(f"版本号必须是纯数字: {version!r}")
+
+        consts_file = Path("mdcx/consts.py")
+        if not consts_file.exists():
+            raise BuildError(f"版本配置文件不存在: {consts_file}")
+
+        original_content = consts_file.read_text(encoding="utf-8")
+        updated_content, replacements = re.subn(
+            r"(?m)^LOCAL_VERSION\s*=\s*\d+\s*$",
+            f"LOCAL_VERSION = {version}",
+            original_content,
+            count=1,
+        )
+        if replacements != 1:
+            raise BuildError("无法在 mdcx/consts.py 中注入 LOCAL_VERSION")
+
+        consts_file.write_text(updated_content, encoding="utf-8")
+        return consts_file, original_content
 
     def _check_environment(self):
         logger.info("构建环境:")

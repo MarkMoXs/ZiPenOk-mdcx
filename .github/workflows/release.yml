@@ -107,11 +107,14 @@ jobs:
         if: ${{ matrix.build == 'windows' }}
         env:
           PYTHONIOENCODING: utf-8
-        run: uv run scripts/build.py --debug --onefile
+          MDCX_BUILD_VERSION: ${{ github.event.inputs.tag || github.ref_name }}
+        run: uv run scripts/build.py --debug --onefile --version "$env:MDCX_BUILD_VERSION"
 
       - name: Build Linux app
         if: ${{ matrix.build == 'linux' }}
-        run: uv run scripts/build.py --debug --onedir
+        env:
+          MDCX_BUILD_VERSION: ${{ github.event.inputs.tag || github.ref_name }}
+        run: uv run scripts/build.py --debug --onedir --version "$MDCX_BUILD_VERSION"
 
       - name: Create Linux archive
         if: ${{ matrix.build == 'linux' }}
