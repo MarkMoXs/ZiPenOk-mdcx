@@ -132,6 +132,7 @@
     "extrafanart",
     "nfo"
   ],
+  "compress_downloaded_images": false,
   "keep_files": [
     "trailer",
     "theme_videos"
