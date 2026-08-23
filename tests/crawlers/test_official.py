@@ -209,6 +209,15 @@ _JSON_RESPONSES = {
         "UCNAME": "Pacopacomama",
         "ThumbHigh": "https://www.pacopacomama.com/moviepages/053026_100/images/l_hd.jpg",
     },
+    "https://www.1pondo.tv/dyn/phpauto/movie_details/movie_id/082226_001.json": {
+        "Title": "1Pondo list tags",
+        "Actor": "Actor List",
+        "Desc": "1Pondo list tags outline",
+        "Duration": 3555,
+        "Release": "2026-08-22",
+        "UCNAME": ["Tag A", "Tag B", "1080p"],
+        "ThumbHigh": "https://www.1pondo.tv/moviepages/082226_001/images/str.jpg",
+    },
     "https://www.10musume.com/dyn/phpauto/movie_details/movie_id/060226_01.json": {
         "Title": "10Musume Title",
         "Actor": "Actor 10",
@@ -378,6 +387,19 @@ async def test_official_crawler_scrapes_vue_uncensored_json_sites(
     assert res.data.runtime == expected_runtime
     assert res.data.release == expected_release
     assert res.data.external_id.startswith(f"https://www.{expected_source}")
+
+
+@pytest.mark.asyncio
+async def test_official_crawler_treats_pondo_ucname_array_as_tags():
+    crawler = OfficialCrawler(client=FakeUncensoredOfficialClient())
+
+    res = await crawler.run(_input("082226_001"))
+
+    assert res.debug_info.error is None
+    assert res.data is not None
+    assert res.data.studio == "1Pondo"
+    assert res.data.publisher == "1Pondo"
+    assert res.data.tags == ["Tag A", "Tag B", "1080p"]
 
 
 def test_official_crawler_is_registered():

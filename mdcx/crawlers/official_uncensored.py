@@ -464,6 +464,14 @@ def _json_value(data: dict[str, Any], *keys: str) -> object:
     return ""
 
 
+def _json_scalar_text(data: dict[str, Any], *keys: str) -> str:
+    """Return a text field without stringifying structured JSON values."""
+    value = _json_value(data, *keys)
+    if isinstance(value, (dict, list, tuple, set)):
+        return ""
+    return _clean_text(value)
+
+
 def _json_images(data: dict[str, Any]) -> tuple[str, str, list[str]]:
     thumb = str(_json_value(data, "ThumbHigh", "MovieThumb", "Thumb", "SampleThumb")).strip()
     poster = str(_json_value(data, "Poster", "Jacket", "Thumb")).strip()
@@ -505,11 +513,19 @@ async def _crawl_json_site(ctx: Context, client, site: UncensoredOfficialSite, m
     release = normalize_release(_json_value(data, "Release", "ReleaseDate", "Year"))
     runtime = seconds_to_minutes(_json_value(data, "Duration", "Runtime"))
     thumb, poster, extrafanart = _json_images(data)
-    series = _clean_text(_json_value(data, "Series", "UCNAME"))
-    studio = _clean_text(_json_value(data, "UCNAME", "Maker", "Studio")) or spec.studio
+    series = _json_scalar_text(data, "Series", "UCNAME")
+    studio = _json_scalar_text(data, "Maker", "Studio")
+    # Newer 1Pondo/10Musume/Paco JSON uses UCNAME for the genre/tag list.
+    # Keep compatibility with older responses where UCNAME was a scalar studio name.
+    if not studio:
+        studio = _json_scalar_text(data, "UCNAME") or spec.studio
     trailer = _clean_text(_json_value(data, "SampleMovie", "SampleMovieHigh", "MovieSample"))
     if not trailer and spec.sample_base_url:
         trailer = f"{spec.sample_base_url}/sample/movies/{movie_id}/sample.mp4"
+
+    tag_value = _json_value(data, "Tag", "Tags", "Genre", "Genres")
+    if not tag_value and isinstance(data.get("UCNAME"), list):
+        tag_value = data["UCNAME"]
 
     return CrawlerData(
         number=movie_id,
@@ -519,7 +535,7 @@ async def _crawl_json_site(ctx: Context, client, site: UncensoredOfficialSite, m
         all_actors=actors,
         outline=_clean_text(_json_value(data, "Desc", "Description")),
         originalplot=_clean_text(_json_value(data, "Desc", "Description")),
-        tags=split_tags(_json_value(data, "Tag", "Tags", "Genre", "Genres")),
+        tags=split_tags(tag_value),
         release=release,
         year=get_year(release),
         runtime=runtime,
