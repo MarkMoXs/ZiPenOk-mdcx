@@ -209,7 +209,6 @@ async def write_nfo(file_info: FileInfo, data: CrawlersResult, nfo_file: Path, o
                 write_text_element(code, "sorttitle", number + " " + originaltitle)
             else:
                 write_text_element(code, "sorttitle", number)
-                print("  </actor>", file=code)
 
         # 输出导演
         if NfoInclude.DIRECTOR in nfo_include_new:
@@ -290,6 +289,7 @@ async def write_nfo(file_info: FileInfo, data: CrawlersResult, nfo_file: Path, o
                 write_text_element(code, "label", publisher)
 
         # 输出番号
+        write_text_element(code, "id", number)
         write_text_element(code, "num", number)
 
         # 输出系列
@@ -327,6 +327,8 @@ async def write_nfo(file_info: FileInfo, data: CrawlersResult, nfo_file: Path, o
                 print("  <actor>", file=code)
                 write_text_element(code, "name", name, indent="    ")
                 write_text_element(code, "type", "Actor", indent="    ")
+                write_text_element(code, "role", name, indent="    ")
+                print("  </actor>", file=code)
 
         # 输出合集(使用演员)
         if NfoInclude.ACTOR_SET in nfo_include_new:
