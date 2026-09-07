@@ -327,7 +327,6 @@ async def write_nfo(file_info: FileInfo, data: CrawlersResult, nfo_file: Path, o
                 print("  <actor>", file=code)
                 write_text_element(code, "name", name, indent="    ")
                 write_text_element(code, "type", "Actor", indent="    ")
-                write_text_element(code, "role", name, indent="    ")
 
         # 输出合集(使用演员)
         if NfoInclude.ACTOR_SET in nfo_include_new:
