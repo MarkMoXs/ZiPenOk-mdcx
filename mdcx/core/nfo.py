@@ -189,21 +189,6 @@ async def write_nfo(file_info: FileInfo, data: CrawlersResult, nfo_file: Path, o
             else:
                 print(f"  <originalplot>{build_cdata(originalplot)}</originalplot>", file=code)
 
-        # 输出发行日期
-        if release:
-            nfo_tagline = manager.config.nfo_tagline.replace("release", release)
-            if nfo_tagline:
-                write_text_element(code, "tagline", nfo_tagline)
-            if NfoInclude.PREMIERED in nfo_include_new:
-                write_text_element(code, "premiered", release)
-            if NfoInclude.RELEASEDATE in nfo_include_new:
-                write_text_element(code, "releasedate", release)
-            if NfoInclude.RELEASE_ in nfo_include_new:
-                write_text_element(code, "release", release)
-
-        # 输出番号
-        write_text_element(code, "num", number)
-
         # 输出标题
         if cd_part and NfoInclude.TITLE_CD in nfo_include_new:
             nfo_title += " " + cd_part[1:].upper()
@@ -224,47 +209,28 @@ async def write_nfo(file_info: FileInfo, data: CrawlersResult, nfo_file: Path, o
                 write_text_element(code, "sorttitle", number + " " + originaltitle)
             else:
                 write_text_element(code, "sorttitle", number)
-
-        # 输出国家和分级
-        country = data.country
-
-        # 输出家长分级
-        if NfoInclude.MPAA in nfo_include_new:
-            if country == "JP":
-                print("  <mpaa>JP-18+</mpaa>", file=code)
-            else:
-                print("  <mpaa>NC-17</mpaa>", file=code)
-
-        # 输出自定义分级
-        if NfoInclude.CUSTOMRATING in nfo_include_new:
-            if country == "JP":
-                print("  <customrating>JP-18+</customrating>", file=code)
-            else:
-                print("  <customrating>NC-17</customrating>", file=code)
-
-        # 输出国家
-        if NfoInclude.COUNTRY in nfo_include_new:
-            write_text_element(code, "countrycode", country)
-
-        # 输出男女演员
-        if NfoInclude.ACTOR_ALL in nfo_include_new:
-            actors = data.all_actors
-        else:
-            actors = data.actors
-        # 有演员时输出演员
-        if NfoInclude.ACTOR in nfo_include_new:
-            if not actors:
-                actors = [manager.config.actor_no_name]
-            for name in actors:
-                print("  <actor>", file=code)
-                write_text_element(code, "name", name, indent="    ")
-                write_text_element(code, "type", "Actor", indent="    ")
                 print("  </actor>", file=code)
 
         # 输出导演
         if NfoInclude.DIRECTOR in nfo_include_new:
             for name in directors:
                 write_text_element(code, "director", name)
+
+        # 输出年代
+        if str(year) and NfoInclude.YEAR in nfo_include_new:
+            print("  <year>" + str(year) + "</year>", file=code)
+
+        # 输出发行日期
+        if release:
+            nfo_tagline = manager.config.nfo_tagline.replace("release", release)
+            if nfo_tagline:
+                write_text_element(code, "tagline", nfo_tagline)
+            if NfoInclude.RELEASE_ in nfo_include_new:
+                write_text_element(code, "release", release)
+            if NfoInclude.RELEASEDATE in nfo_include_new:
+                write_text_element(code, "releasedate", release)
+            if NfoInclude.PREMIERED in nfo_include_new:
+                write_text_element(code, "premiered", release)
 
         # 输出公众评分、影评人评分
         try:
@@ -284,30 +250,30 @@ async def write_nfo(file_info: FileInfo, data: CrawlersResult, nfo_file: Path, o
         except Exception:
             pass
 
-        # 输出年代
-        if str(year) and NfoInclude.YEAR in nfo_include_new:
-            print("  <year>" + str(year) + "</year>", file=code)
+        # 输出国家和分级
+        country = data.country
+
+        # 输出家长分级
+        if NfoInclude.MPAA in nfo_include_new:
+            if country == "JP":
+                print("  <mpaa>R18+</mpaa>", file=code)
+            else:
+                print("  <mpaa>NC-18</mpaa>", file=code)
+
+        # 输出自定义分级
+        if NfoInclude.CUSTOMRATING in nfo_include_new:
+            if country == "JP":
+                print("  <customrating>成人电影</customrating>", file=code)
+            else:
+                print("  <customrating>成人电影</customrating>", file=code)
+
+        # 输出国家
+        if NfoInclude.COUNTRY in nfo_include_new:
+            write_text_element(code, "countrycode", country)
 
         # 输出时长
         if str(runtime) and NfoInclude.RUNTIME in nfo_include_new:
             print("  <runtime>" + str(runtime).replace(" ", "") + "</runtime>", file=code)
-
-        # 输出合集(使用演员)
-        if NfoInclude.ACTOR_SET in nfo_include_new:
-            for name in data.actors:
-                print("  <set>", file=code)
-                write_text_element(code, "name", name, indent="    ")
-                print("  </set>", file=code)
-
-        # 输出合集(使用系列)
-        if NfoInclude.SERIES_SET in nfo_include_new and series:
-            print("  <set>", file=code)
-            write_text_element(code, "name", series, indent="    ")
-            print("  </set>", file=code)
-
-        # 输出系列
-        if series and NfoInclude.SERIES in nfo_include_new:
-            write_text_element(code, "series", series)
 
         # 输出片商/制作商
         if studio:
@@ -323,17 +289,52 @@ async def write_nfo(file_info: FileInfo, data: CrawlersResult, nfo_file: Path, o
             if NfoInclude.LABEL in nfo_include_new:
                 write_text_element(code, "label", publisher)
 
-        # 输出 tag
-        if NfoInclude.TAG in nfo_include_new:
-            for t in tags:
-                if t:
-                    write_text_element(code, "tag", t)
+        # 输出番号
+        write_text_element(code, "num", number)
+
+        # 输出系列
+        if series and NfoInclude.SERIES in nfo_include_new:
+            write_text_element(code, "series", series)
+
+        # 输出合集(使用系列)
+        if NfoInclude.SERIES_SET in nfo_include_new and series:
+            print("  <set>", file=code)
+            write_text_element(code, "name", series, indent="    ")
+            print("  </set>", file=code)
 
         # 输出 genre
         if NfoInclude.GENRE in nfo_include_new:
             for t in tags:
                 if t:
                     write_text_element(code, "genre", t)
+
+        # 输出 tag
+        if NfoInclude.TAG in nfo_include_new:
+            for t in tags:
+                if t:
+                    write_text_element(code, "tag", t)
+
+        # 输出男女演员
+        if NfoInclude.ACTOR_ALL in nfo_include_new:
+            actors = data.all_actors
+        else:
+            actors = data.actors
+        # 有演员时输出演员
+        if NfoInclude.ACTOR in nfo_include_new:
+            if not actors:
+                actors = [manager.config.actor_no_name]
+            for name in actors:
+                print("  <actor>", file=code)
+                write_text_element(code, "name", name, indent="    ")
+                write_text_element(code, "type", "Actor", indent="    ")
+                write_text_element(code, "role", name, indent="    ")
+
+        # 输出合集(使用演员)
+        if NfoInclude.ACTOR_SET in nfo_include_new:
+            for name in data.actors:
+                print("  <set>", file=code)
+                write_text_element(code, "name", name, indent="    ")
+                print("  </set>", file=code)
 
         # 输出封面地址
         if poster and NfoInclude.POSTER in nfo_include_new:
